@@ -31,6 +31,23 @@ const routes = (handler) => [
         multipart: true,
         output: 'stream',
         maxBytes: 512000,
+        parse: true,
+        timeout: false,
+        failAction: async (request, h, err) => {
+          console.log('Payload error:', err);
+          
+          if (err.output && err.output.statusCode === 413) {
+            return h.response({
+              status: 'fail',
+              message: 'Ukuran file terlalu besar. Maksimal 512KB'
+            }).code(413).takeover();
+          }
+          
+          return h.response({
+            status: 'fail',
+            message: 'Payload tidak valid'
+          }).code(400).takeover();
+        }
       },
     },
   },
@@ -66,4 +83,4 @@ const routes = (handler) => [
   },
 ];
 
-module.exports = routes;
+module.exports = routes;  

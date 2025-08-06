@@ -79,6 +79,15 @@ const init = async () => {
       cors: {
         origin: ['*'],
       },
+      files: {
+        relativeTo: path.join(__dirname, '../upload'),
+      },
+      validate: {
+        failAction: async (request, h, err) => {
+          console.error('Validation error:', err);
+          throw err;
+        },
+      },
     },
   });
 

@@ -152,6 +152,36 @@ class AlbumsHandler {
       const { cover } = request.payload;
       const { id } = request.params;
 
+      console.log('Upload handler called');
+      console.log('Cover:', cover);
+      console.log('Album ID:', id);
+
+      // Check if album exists first
+      await this.service.getAlbumById(id);
+
+      // Validate if cover is provided
+      if (!cover) {
+        const response = h.response({
+          status: 'fail',
+          message: 'Cover album harus disertakan',
+        });
+        response.code(400);
+        return response;
+      }
+
+      // Check if it's a valid file object
+      if (!cover.hapi || !cover.hapi.headers) {
+        const response = h.response({
+          status: 'fail',
+          message: 'File tidak valid',
+        });
+        response.code(400);
+        return response;
+      }
+
+      console.log('Headers:', cover.hapi.headers);
+
+      // Validate image headers
       this.uploadsValidator.validateImageHeaders(cover.hapi.headers);
 
       const filename = await this.storageService.writeFile(cover, cover.hapi);
@@ -178,6 +208,8 @@ class AlbumsHandler {
       response.code(201);
       return response;
     } catch (error) {
+      console.error('Upload error:', error);
+      
       if (error instanceof ClientError) {
         const response = h.response({
           status: 'fail',
@@ -187,12 +219,21 @@ class AlbumsHandler {
         return response;
       }
 
+      // Handle specific upload errors
+      if (error.message && error.message.includes('Invalid content-type')) {
+        const response = h.response({
+          status: 'fail',
+          message: 'Format file tidak valid. Harus berupa gambar.',
+        });
+        response.code(400);
+        return response;
+      }
+
       const response = h.response({
         status: 'error',
         message: 'Maaf, terjadi kegagalan pada server kami.',
       });
       response.code(500);
-      console.error(error);
       return response;
     }
   }
